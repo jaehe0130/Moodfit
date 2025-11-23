@@ -1,6 +1,5 @@
 import streamlit as st
 import time
-from streamlit_extras.switch_page_button import switch_page
 
 st.set_page_config(
     page_title="MoodFit",
@@ -9,16 +8,20 @@ st.set_page_config(
 )
 
 # ----------------------------
-# 화면 중앙 정렬 컨테이너
+# 화면 중앙 배치 여백
 # ----------------------------
 st.markdown("<div style='height:12vh;'></div>", unsafe_allow_html=True)
 
-# 이미지 중앙 배치
+# ----------------------------
+# 이미지 중앙 배치 (columns 활용)
+# ----------------------------
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
     st.image("assets/home_fitness.jpg", width=350)
 
+# ----------------------------
 # 텍스트
+# ----------------------------
 st.markdown("""
 <h1 style="text-align:center; font-size:42px; font-weight:900; margin-top:15px;">
 🏋️ MoodFit
@@ -34,8 +37,15 @@ st.markdown("""
 </p>
 """, unsafe_allow_html=True)
 
-st.markdown("<div style='height:10vh;'></div>", unsafe_allow_html=True)
+# ----------------------------
+# 아래 여백
+# ----------------------------
+st.markdown("<div style='height:8vh;'></div>", unsafe_allow_html=True)
 
-# 자동 페이지 이동
-time.sleep(2)
-switch_page("1_user_info2")
+# ----------------------------
+# 2초 뒤 자동 이동
+# ----------------------------
+if "redirect" not in st.session_state:
+    st.session_state.redirect = True
+    time.sleep(2)
+    st.page_link("pages/1_user_info2.py", label="", icon="")
