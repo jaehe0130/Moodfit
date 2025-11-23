@@ -35,4 +35,4 @@ st.markdown("<div style='height:10vh;'></div>", unsafe_allow_html=True)  # 하�
 # 2초 뒤 자동 페이지 이동
 # ----------------------------
 time.sleep(2)
-switch_page("1_user_info2")  # 확장자 없이 pages 폴더 내 파일 이름만
+st.switch_page("1_user_info2")  # 확장자 없이 pages 폴더 내 파일 이름만
