@@ -128,16 +128,22 @@ def llm_rank_top3(candidates_df,user_row,daily_row,weather,temp,city,place_pref,
 
 
 # ========================= LOAD SHEETS =========================
-sh=connect_gsheet("MoodFit")
-ws_users=sh.worksheet("users")
-ws_daily=sh.worksheet("daily")
-ws_reco=sh.worksheet("recommendation")
+sh = connect_gsheet("MoodFit")
+ws_users = sh.worksheet("users")
+ws_daily = sh.worksheet("daily")
+ws_reco = sh.worksheet("recommendation")
 
-users_df=pd.DataFrame(ws_users.get_all_records())
-daily_df=pd.DataFrame(ws_daily.get_all_records())
-workouts_df=load_workouts()
+# daily read safe
+daily_raw = ws_daily.get_all_records(numeric_value="RAW")
+daily_df = pd.DataFrame(daily_raw)
 
-daily_df["날짜"]=pd.to_datetime(daily_df["날짜"],errors="coerce").dt.date
+# 날짜 변환
+if "날짜" in daily_df.columns:
+    daily_df["날짜"] = pd.to_datetime(daily_df["날짜"], errors="coerce").dt.date
+else:
+    st.error("❌ daily 시트에 '날짜' 컬럼이 없습니다. 첫 행에 헤더를 넣어주세요.")
+    st.stop()
+
 
 # UI
 st.markdown("## 🌍 도시 입력")
@@ -163,44 +169,28 @@ target="중강도"
 candidates_df=filter_candidates(workouts_df,purpose,target)
 
 st.markdown("---")
-
+# ========================= recommendation 저장 =========================
 if st.button("🤖 Top3 추천 받기", use_container_width=True):
-    with st.spinner("추천 생성 중..."):
-        top3 = llm_rank_top3(
-            candidates_df,
-            user_row,
-            daily_row,
-            weather,
-            temp,
-            city,
-            place_pref,
-            equip_list,
-            merged
-        )
 
-    # 추천 결과가 없으면 에러 처리
-    if not top3 or len(top3) < 1:
-        st.error("추천 운동 생성에 실패했습니다. 다시 시도해주세요.")
+    with st.spinner("추천 생성 중..."):
+        top3 = llm_rank_top3(candidates_df, user_row, daily_row, weather, temp, city, place_pref, equip_list, merged_user_info)
+
+    if not top3 or len(top3) < 3:
+        st.error("추천 운동 생성 실패. 다시 시도해주세요.")
         st.stop()
 
-    # =========================
-    # 📌 recommendation 시트에 1줄로 저장
-    # 헤더: 이름 | 날짜 | 운동목적 | 추천운동1 | 추천운동2 | 추천운동3 | 이유1 | 이유2 | 이유3 | 강도 | 날씨 | 장소
-    # =========================
     ws_reco.append_row([
         user_name,
         str(pick_date_dt),
         purpose,
-        top3[0]["운동명"] if len(top3) > 0 else "",
-        top3[1]["운동명"] if len(top3) > 1 else "",
-        top3[2]["운동명"] if len(top3) > 2 else "",
-        top3[0]["이유"] if len(top3) > 0 else "",
-        top3[1]["이유"] if len(top3) > 1 else "",
-        top3[2]["이유"] if len(top3) > 2 else "",
-        target_intensity,
-        weather,
-        place_pref
+        top3[0]["운동명"],
+        top3[1]["운동명"],
+        top3[2]["운동명"],
+        top3[0]["이유"],
+        top3[1]["이유"],
+        top3[2]["이유"]
     ])
+
 
     # 👉 평가 페이지에서 그대로 쓰려고 세션에 저장
     st.session_state["recommended_workouts"] = [w["운동명"] for w in top3]
