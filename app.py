@@ -13,6 +13,6 @@ st.title("MoodFit")
 time.sleep(2)
 
 # 페이지 이동
-st.switch_page("1_user_info2")
+st.switch_page("1_user_info2.py")
 
 
