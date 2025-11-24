@@ -6,3 +6,4 @@ streamlit-extras
 python-dotenv
 gspread
 oauth2client
+google-auth
