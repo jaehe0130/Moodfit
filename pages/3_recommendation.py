@@ -133,17 +133,20 @@ ws_users = sh.worksheet("users")
 ws_daily = sh.worksheet("daily")
 ws_reco = sh.worksheet("recommendation")
 
-# daily read safe
-daily_raw = ws_daily.get_all_records(numeric_value="RAW")
+try:
+    daily_raw = ws_daily.get_all_records(numeric_value="RAW")
+except Exception as e:
+    st.error("❌ daily 시트의 헤더 또는 구조가 잘못되었습니다. 첫 줄이 반드시 헤더인지 확인해주세요.")
+    st.stop()
+
 daily_df = pd.DataFrame(daily_raw)
 
-# 날짜 변환
+# 날짜 컬럼 변환
 if "날짜" in daily_df.columns:
     daily_df["날짜"] = pd.to_datetime(daily_df["날짜"], errors="coerce").dt.date
 else:
-    st.error("❌ daily 시트에 '날짜' 컬럼이 없습니다. 첫 행에 헤더를 넣어주세요.")
+    st.error("❌ daily 시트에 '날짜' 헤더가 없습니다.")
     st.stop()
-
 
 # UI
 st.markdown("## 🌍 도시 입력")
@@ -173,22 +176,24 @@ st.markdown("---")
 if st.button("🤖 Top3 추천 받기", use_container_width=True):
 
     with st.spinner("추천 생성 중..."):
-        top3 = llm_rank_top3(candidates_df, user_row, daily_row, weather, temp, city, place_pref, equip_list, merged_user_info)
+        top3 = llm_rank_top3(candidates_df, user_row, daily_row,
+                             weather, temp, city, place_pref, equip_list,
+                             merged_user_info)
 
-    if not top3 or len(top3) < 3:
-        st.error("추천 운동 생성 실패. 다시 시도해주세요.")
+    if not top3:
+        st.error("추천 생성 실패")
         st.stop()
 
     ws_reco.append_row([
         user_name,
         str(pick_date_dt),
         purpose,
-        top3[0]["운동명"],
-        top3[1]["운동명"],
-        top3[2]["운동명"],
-        top3[0]["이유"],
-        top3[1]["이유"],
-        top3[2]["이유"]
+        top3[0]["운동명"] if len(top3)>0 else "",
+        top3[1]["운동명"] if len(top3)>1 else "",
+        top3[2]["운동명"] if len(top3)>2 else "",
+        top3[0]["이유"] if len(top3)>0 else "",
+        top3[1]["이유"] if len(top3)>1 else "",
+        top3[2]["이유"] if len(top3)>2 else ""
     ])
 
 
