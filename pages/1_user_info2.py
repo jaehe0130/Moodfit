@@ -19,7 +19,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Google Sheet 연결
-sh = connect_gsheet("MoodFit_users")
+sh = connect_gsheet("MoodFit")
 ws = sh.sheet1   # 첫 시트
 
 # 입력 UI
