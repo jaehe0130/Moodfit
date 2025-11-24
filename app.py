@@ -25,5 +25,5 @@ with col2:
 
     # 버튼 중앙
     if st.button("👉 시작하기", use_container_width=True):
-        st.switch_page("1_user_info2.py")
+        st.switch_page("pages/1_user_info2.py")
 
