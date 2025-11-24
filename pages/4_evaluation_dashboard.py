@@ -1,58 +1,51 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
+import os
+from datetime import datetime
 
-st.set_page_config(page_title="추천 운동 평가 Dashboard", page_icon="📊", layout="wide")
+st.set_page_config(page_title="추천 평가", page_icon="📊", layout="centered")
 
-st.title("📊 MoodFit 추천운동 평가 Dashboard")
+st.title("📊 추천운동 평가")
 
-# 평가 데이터 불러오기
-uploaded_file = st.file_uploader("평가 결과 CSV 파일 업로드", type=["csv"])
+# ===== 추천 결과 전달받기 =====
+# recommendation 페이지에서 session_state에 저장했다고 가정
+recommended = st.session_state.get("recommended_workouts", ["운동1", "운동2", "운동3"])
 
-if uploaded_file is not None:
-    df = pd.read_csv(uploaded_file)
+st.write("📍 오늘 추천받은 운동:")
+for r in recommended:
+    st.markdown(f"- **{r}**")
 
-    # 측정 항목 목록
-    score_columns = [
-        "목적 적합성",
-        "감정 적합성",
-        "난이도 적합성",
-        "부상위험 고려",
-        "추천 타당성",
-        "추천 다양성"
-    ]
+st.markdown("---")
 
-    st.subheader("📌 전체 평균 점수")
-    avg_scores = df[score_columns].mean()
+# ===== 사용자 입력 폼 =====
+st.subheader("📝 추천 운동 평가 입력")
 
-    col1, col2 = st.columns(2)
+ratings = {}
+for r in recommended:
+    ratings[r] = st.slider(f"{r} 적합도 평가", 1, 5, 3)
 
-    with col1:
-        st.metric("총 평균 점수", round(avg_scores.mean(), 2))
+overall = st.radio("전체 추천 만족도", ["👍 좋았어요", "🙂 보통", "👎 별로예요"])
+comment = st.text_area("개선 의견이 있다면 작성해주세요 (선택 사항)")
 
-        for col in score_columns:
-            st.write(f"**{col}:** {round(avg_scores[col], 2)} 점")
+if st.button("💾 평가 저장하기", use_container_width=True):
+    # Save to CSV
+    data = {
+        "timestamp": datetime.now(),
+        "추천1": recommended[0],
+        "추천2": recommended[1],
+        "추천3": recommended[2],
+        "전체만족도": overall,
+        "코멘트": comment,
+    }
+    for r in recommended:
+        data[f"{r}_점수"] = ratings[r]
 
-    with col2:
-        # Radar chart using Plotly
-        radar_df = pd.DataFrame(dict(
-            r=list(avg_scores.values),
-            theta=score_columns
-        ))
+    df = pd.DataFrame([data])
 
-        fig = px.line_polar(radar_df, r='r', theta='theta', line_close=True)
-        fig.update_traces(fill="toself")
-        st.plotly_chart(fig, use_container_width=True)
+    # Save or append
+    if os.path.exists("evaluation_results.csv"):
+        df.to_csv("evaluation_results.csv", mode="a", header=False, index=False)
+    else:
+        df.to_csv("evaluation_results.csv", index=False)
 
-    st.subheader("📍 페르소나별 필터")
-    persona_list = sorted(df["페르소나"].unique())
-    selected_persona = st.selectbox("페르소나 선택", persona_list)
-
-    persona_data = df[df["페르소나"] == selected_persona]
-    st.write(persona_data)
-
-    st.subheader("📝 평가 코멘트 모음")
-    for i, row in persona_data.iterrows():
-        st.write(f"**- 평가자 {row['평가자']}** : {row['코멘트']}")
-else:
-    st.info("📥 CSV 파일을 업로드해주세요.")
+    st.success("🎉 평가가 저장되었습니다! 감사합니다.")
