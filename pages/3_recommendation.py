@@ -1,8 +1,73 @@
-# -*- coding: utf-8 -*- import os, re, json, requests import pandas as pd import numpy as np import streamlit as st from openai import OpenAI from datetime import datetime, date from sheets_auth import connect_gsheet st.set_page_config(page_title="운동 추천", page_icon="🏋️", layout="centered") st.markdown(""" <h1 style='text-align:center; font-weight:700;'>🏋️ 맞춤 운동 추천</h1> <p style="text-align:center; color:gray; margin-top:-10px;"> 오늘의 컨디션 + 날씨 기반 Top3 운동 추천 </p> """, unsafe_allow_html=True) # ========================= WORKOUT CSV ========================= WORKOUT_CSV = "workout.csv" def read_csv(path): for enc in ["utf-8-sig", "utf-8", "cp949"]: try: return pd.read_csv(path, encoding=enc) except Exception: pass st.error("❌ workout.csv 읽기 실패") st.stop() def split_tags(x): if pd.isna(x): return [] return [s.strip() for s in str(x).split(",") if s.strip()] def load_workouts(): df = read_csv(WORKOUT_CSV) if "운동목적" not in df.columns: st.error("❌ workout.csv 에 '운동목적' 컬럼이 없습니다.") st.stop() df["운동목적_list"] = df["운동목적"].apply(split_tags) return df # 전역에서 한 번만 로드 workouts_df = load_workouts() # ========================= 날씨 조회 ========================= def get_weather(city): key = os.getenv("WEATHER_API_KEY") if not key: return "unknown", 0.0 url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={key}&lang=kr&units=metric" try: res = requests.get(url).json() return res["weather"][0]["main"].lower(), res["main"]["temp"] except Exception: return "unknown", 0.0 # ========================= LLM JSON 파싱 ========================= def parse_json(text): text = re.sub(r"
+
+# -*- coding: utf-8 -*-
+import os, re, json, requests
+import pandas as pd
+import numpy as np
+import streamlit as st
+from openai import OpenAI
+from datetime import datetime, date
+from sheets_auth import connect_gsheet
+
+st.set_page_config(page_title="운동 추천", page_icon="🏋️", layout="centered")
+
+st.markdown("""
+<h1 style='text-align:center; font-weight:700;'>🏋️ 맞춤 운동 추천</h1>
+<p style="text-align:center; color:gray; margin-top:-10px;">
+오늘의 컨디션 + 날씨 기반 Top3 운동 추천
+</p>
+""", unsafe_allow_html=True)
+
+
+# ========================= WORKOUT CSV =========================
+WORKOUT_CSV = "workout.csv"
+
+def read_csv(path):
+    for enc in ["utf-8-sig", "utf-8", "cp949"]:
+        try:
+            return pd.read_csv(path, encoding=enc)
+        except Exception:
+            pass
+    st.error("❌ workout.csv 읽기 실패")
+    st.stop()
+
+
+def split_tags(x):
+    if pd.isna(x):
+        return []
+    return [s.strip() for s in str(x).split(",") if s.strip()]
+
+
+def load_workouts():
+    df = read_csv(WORKOUT_CSV)
+    if "운동목적" not in df.columns:
+        st.error("❌ workout.csv 에 '운동목적' 컬럼이 없습니다.")
+        st.stop()
+    df["운동목적_list"] = df["운동목적"].apply(split_tags)
+    return df
+
+# 전역에서 한 번만 로드
+workouts_df = load_workouts()
+
+
+# ========================= 날씨 조회 =========================
+def get_weather(city):
+    key = os.getenv("WEATHER_API_KEY")
+    if not key:
+        return "unknown", 0.0
+
+    url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={key}&lang=kr&units=metric"
+    try:
+        res = requests.get(url).json()
+        return res["weather"][0]["main"].lower(), res["main"]["temp"]
+    except Exception:
+        return "unknown", 0.0
+
+
+# ========================= LLM JSON 파싱 =========================
+def parse_json(text):
+    text = re.sub(r"
 (json)?", "", text).strip("` ")
     return json.loads(text)
-
-
 # ========================= STREAMLIT UI =========================
 city = st.text_input("🌍 도시명", "Seoul")
 weather, temp = get_weather(city)
