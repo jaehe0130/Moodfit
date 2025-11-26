@@ -239,5 +239,6 @@ JSON만 출력하세요.
         st.write(item["이유"])
 
     if st.button("📊 평가하기"):
-        st.session_state["recommended_workouts"] = [w["운동명"] for w in top3]
+        st.session_state["recommended_workouts"] = [w["exercise_name"] for w in top3]
+
         st.switch_page("pages/4_evaluation.py")
