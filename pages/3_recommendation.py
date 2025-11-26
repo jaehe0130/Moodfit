@@ -233,18 +233,24 @@ JSON만 출력하세요.
 
     st.success("🎉 daily 시트에 추천 결과 저장 완료!")
 
-    st.markdown("## 🏅 추천 Top3")
+       st.markdown("## 🏅 추천 Top3")
     for item in top3:
         st.write(f"### #{item['rank']} {item['운동명']}")
         st.write(item["이유"])
 
-    if st.button("📊 평가하기"):
-        st.write("DEBUG: 버튼 눌림!")   # ← 추가
-        st.session_state["recommended_workouts"] = [w["exercise_name"] for w in top3]
-        st.session_state["selected_user"] = profile["이름"]
-        st.session_state["selected_date"] = latest_date_str
-        st.write("DEBUG: switch_page 실행 전")   # ← 추가
+    # 평가 페이지로 이동
+    if st.button("📊 평가하기", use_container_width=True):
+        st.write("DEBUG: 버튼 눌림!")   # 디버그용
+
+        # 1) 세션에 추천 운동 이름 3개 저장 (키 이름: '운동명')
+        st.session_state["recommended_workouts"] = [w["운동명"] for w in top3]
+
+        # 2) 평가 페이지에서 쓸 사용자 / 날짜 정보 저장
+        st.session_state["selected_user"] = user_name          # 이미 위에서 선택한 이름
+        st.session_state["selected_date"] = str(pick_date_dt)  # 날짜를 문자열로
+
+        st.write("DEBUG: switch_page 실행 전")   # 디버그용
+
+        # 3) 평가 페이지로 이동
         st.switch_page("pages/4_evaluation.py")
 
-      
- 
