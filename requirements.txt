@@ -7,3 +7,5 @@ python-dotenv
 gspread
 oauth2client
 google-auth
+import spotipy
+from spotipy.oauth2 import SpotifyClientCredentials
