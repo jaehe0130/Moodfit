@@ -57,9 +57,9 @@ target_row = None
 for i, row in enumerate(data, start=1):  # header 제외했으므로 index 1부터
     if row[0] == selected_date and row[1] == selected_user:
         target_row = i + 1  # 실제 Google Sheet row 번호
-        rec1 = row[11]
-        rec2 = row[12]
-        rec3 = row[13]
+        rec1 = row[10]
+        rec2 = row[11]
+        rec3 = row[12]
         break
 
 if target_row is None:
