@@ -401,25 +401,14 @@ JSON만 출력.
         st.write(f"### #{item['rank']} {item['운동명']}")
         st.write(item["이유"])
 
-    # ========================= Spotify 블록 =========================
-    emotion = get_emotion_from_daily(daily_row)
-    top3_names = [t["운동명"] for t in top3]
-    cache_key = f"{target_intensity}|{purpose}|{emotion}|{'/'.join(top3_names)}"
-
-    if "playlist_cache" not in st.session_state:
-        st.session_state["playlist_cache"] = {}
-
-    if cache_key in st.session_state["playlist_cache"]:
-        workout_playlist_pairs = st.session_state["playlist_cache"][cache_key]
-    else:
-        sp = get_spotify_client()
-        workout_playlist_pairs = get_playlists_for_top3_with_llm(
-            sp, top3, daily_row,
-            target_intensity=target_intensity,
-            purpose=purpose,
-            market="KR"
-        )
-        st.session_state["playlist_cache"][cache_key] = workout_playlist_pairs
+    # ======== Spotify 플레이리스트 생성 및 출력 ========
+    sp = get_spotify_client()
+    workout_playlist_pairs = get_playlists_for_top3_with_llm(
+        sp, top3, daily_row,
+        target_intensity=target_intensity,
+        purpose=purpose,
+        market="KR"
+    )
 
     st.markdown("## 🎧 추천 운동별 Spotify 플레이리스트")
 
@@ -448,9 +437,7 @@ JSON만 출력.
             </div>
             """, unsafe_allow_html=True)
 
-    # ========================= 평가 페이지 이동 =========================
-    if st.button("📊 평가하기"):
-
-    
-        st.switch_page("pages/4_evaluation.py")
-       
+# ========================= 평가 페이지 이동 버튼 (항상 화면 하단에) =========================
+st.markdown("---")
+if st.button("📊 평가하기", use_container_width=True):
+    st.switch_page("pages/4_evaluation.py")
