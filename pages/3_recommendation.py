@@ -104,22 +104,46 @@ def parse_json(text: str):
     return json.loads(text)
 
 
-# ========================= Google Sheets =========================
+# ========================= Google Sheets (캐시 적용) =========================
+@st.cache_resource
+def get_spreadsheet():
+    """MoodFit 스프레드시트 객체 캐시"""
+    return connect_gsheet("MoodFit")
+
+
+@st.cache_data
+def load_daily_raw():
+    """daily 시트 전체 데이터를 캐시해서 재사용"""
+    sh = get_spreadsheet()
+    ws_daily = sh.worksheet("daily")
+    return ws_daily.get_all_values()
+
+
+@st.cache_data
+def load_users_df():
+    """users 시트 전체를 DataFrame으로 캐시해서 재사용"""
+    sh = get_spreadsheet()
+    ws_users = sh.worksheet("users")
+    return pd.DataFrame(ws_users.get_all_records())
+
+
+# ========== 날씨 입력 ==========
 city = st.text_input("🌍 도시명", "Seoul")
 weather, temp = get_weather(city)
 st.info(f"현재날씨: {weather}, {temp:.1f}°C")
 
-sh = connect_gsheet("MoodFit")
-ws_users = sh.worksheet("users")
+# 스프레드시트 & 시트 핸들 (업데이트용)
+sh = get_spreadsheet()
 ws_daily = sh.worksheet("daily")
 
-daily_raw = ws_daily.get_all_values()
+# 캐시된 daily/users 데이터
+daily_raw = load_daily_raw()
 if len(daily_raw) < 2:
     st.error("❌ daily 시트에 데이터가 없습니다.")
     st.stop()
 
 daily_df = pd.DataFrame(daily_raw[1:], columns=daily_raw[0])
-users_df = pd.DataFrame(ws_users.get_all_records())
+users_df = load_users_df()
 
 daily_df["날짜"] = pd.to_datetime(daily_df["날짜"], errors="coerce").dt.date
 
