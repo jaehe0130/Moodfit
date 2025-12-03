@@ -119,9 +119,11 @@ def load_daily_raw():
     return ws_daily.get_all_values()
 
 
-@st.cache_data
 def load_users_df():
-    """users 시트 전체를 DataFrame으로 캐시해서 재사용"""
+    """
+    users 시트 전체를 DataFrame으로 가져오기.
+    새로 가입한 회원이 바로 보이도록 캐시하지 않음.
+    """
     sh = get_spreadsheet()
     ws_users = sh.worksheet("users")
     return pd.DataFrame(ws_users.get_all_records())
